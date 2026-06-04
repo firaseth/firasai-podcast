@@ -1,4 +1,3 @@
--e .
 openai>=2.0.0
 anthropic==0.18.1
 requests==2.31.0
