@@ -6,7 +6,7 @@ from openai import OpenAI
 class ResearcherAgent:
     def __init__(self, config):
         self.config = config
-        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
+        self.client = config.get_openai_client()
 
     def research_topic(self, topic: str) -> dict:
         """Deep research pipeline: Perplexity → structured output."""

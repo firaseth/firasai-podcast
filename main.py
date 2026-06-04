@@ -1,5 +1,8 @@
 import schedule
 import time
+import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from config import Config
 from agents.planner import PlannerAgent
 from agents.researcher import ResearcherAgent
@@ -9,6 +12,22 @@ from agents.marketer import MarketerAgent
 from agents.analyst import AnalystAgent
 from tools.notion_tool import NotionTool
 from tools.audio_tool import AudioTool
+
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status": "healthy", "agent": "FirasAi"}')
+
+
+def start_health_check_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+    print(f"🏥 Health check server listening on port {port}")
+    server.serve_forever()
+
 
 
 class FirasAiAgent:
@@ -31,7 +50,8 @@ class FirasAiAgent:
         print("🎙️ Starting FirasAi episode creation...")
 
         if not topic:
-            topic = self.planner.suggest_topic()
+            topic_dict = self.planner.suggest_topic()
+            topic = topic_dict.get("title") or topic_dict.get("topic") or str(topic_dict)
             print(f"💡 Suggested topic: {topic}")
 
         research = self.researcher.research_topic(topic)
@@ -78,6 +98,9 @@ class FirasAiAgent:
     def start(self):
         """Start the agent with all scheduled tasks."""
         print("🤖 FirasAi Agent started — press Ctrl+C to stop")
+
+        # Start health check server for cloud deployment
+        threading.Thread(target=start_health_check_server, daemon=True).start()
 
         schedule.every().monday.at("09:00").do(self.run_weekly_workflow)
         schedule.every().day.at("10:00").do(self.check_responses)

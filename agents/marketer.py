@@ -5,7 +5,7 @@ from openai import OpenAI
 class MarketerAgent:
     def __init__(self, config):
         self.config = config
-        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
+        self.client = config.get_openai_client()
 
     def create_marketing_package(self, episode: dict) -> dict:
         """Create a full marketing package for a FirasAi episode."""

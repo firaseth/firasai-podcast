@@ -5,7 +5,7 @@ from openai import OpenAI
 class ScriptwriterAgent:
     def __init__(self, config):
         self.config = config
-        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
+        self.client = config.get_openai_client()
 
     def write_script(
         self,

@@ -6,7 +6,7 @@ from openai import OpenAI
 class PlannerAgent:
     def __init__(self, config):
         self.config = config
-        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
+        self.client = config.get_openai_client()
 
     def suggest_topic(self) -> dict:
         """Suggest a single trending FirasAi episode topic."""

@@ -6,7 +6,7 @@ from openai import OpenAI
 class EditorAgent:
     def __init__(self, config):
         self.config = config
-        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
+        self.client = config.get_openai_client()
 
     def find_viral_moments(self, transcript: str) -> dict:
         """Analyze a transcript and surface the 10 best short-form clip moments."""
@@ -61,8 +61,10 @@ Transcript: {transcript}
 
     def transcribe_audio(self, audio_url: str):
         """Download audio and transcribe with Whisper. Returns verbose JSON."""
+        import tempfile
+        import os
         audio_bytes = requests.get(audio_url).content
-        tmp_path = "/tmp/firasai_audio.mp3"
+        tmp_path = os.path.join(tempfile.gettempdir(), "firasai_audio.mp3")
         with open(tmp_path, "wb") as f:
             f.write(audio_bytes)
 

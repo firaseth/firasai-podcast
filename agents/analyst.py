@@ -6,7 +6,7 @@ from openai import OpenAI
 class AnalystAgent:
     def __init__(self, config):
         self.config = config
-        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
+        self.client = config.get_openai_client()
 
     def generate_weekly_report(self) -> dict:
         """Pull stats from all platforms and return AI-analysed weekly report."""

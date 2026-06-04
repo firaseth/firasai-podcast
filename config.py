@@ -40,3 +40,18 @@ class Config:
     PRIMARY_MODEL = "gpt-4"
     FAST_MODEL = "gpt-3.5-turbo"
     CLAUDE_MODEL = "claude-3-opus-20240229"
+
+    def get_openai_client(self):
+        from openai import OpenAI
+        
+        api_key = self.OPENAI_API_KEY
+        base_url = os.getenv("OPENAI_BASE_URL")
+        
+        if api_key == "ollama" or (base_url and "localhost" in base_url):
+            return OpenAI(
+                base_url=base_url or "http://localhost:11434/v1",
+                api_key=api_key or "ollama"
+            )
+        
+        return OpenAI(api_key=api_key or "dummy_key_for_initialization")
+
