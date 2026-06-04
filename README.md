@@ -5,6 +5,8 @@
 
 A complete, production-ready system for launching and running an **autonomous AI-powered podcast business** — covering AI, business, finance, crypto, NFTs, and sports.
 
+![FirasAi Podcast](./banner.svg)
+
 ---
 
 ## 🗂️ Repository Structure
@@ -17,28 +19,21 @@ firasai-podcast/
 ├── 04-Make-Blueprints.md          # Section 6: Make.com automation blueprints
 ├── 05-AI-Agent-Code.md            # Section 7: Python agent reference (narrative)
 ├── FirasAi-Complete-Bundle.md     # Master bundle — all sections in one file
-├── agent/                         # ✅ Runnable Python agent (source files)
-│   ├── main.py
-│   ├── config.py
-│   ├── requirements.txt
-│   ├── .env.example
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   ├── agents/
-│   │   ├── __init__.py
-│   │   ├── planner.py
-│   │   ├── researcher.py
-│   │   ├── scriptwriter.py
-│   │   ├── editor.py
-│   │   ├── marketer.py
-│   │   └── analyst.py
-│   └── tools/
-│       ├── __init__.py
-│       ├── notion_tool.py
-│       └── audio_tool.py
-├── .gitignore
-├── CONTRIBUTING.md
-└── LICENSE
+├── DEPLOYMENT.md                  # Deployment guide (local, cloud, free AI)
+├── agents/                        # Python agent modules
+│   ├── planner.py
+│   ├── researcher.py
+│   ├── scriptwriter.py
+│   ├── editor.py
+│   ├── marketer.py
+│   └── analyst.py
+├── tools/
+│   ├── notion_tool.py
+│   └── audio_tool.py
+├── main.py
+├── config.py
+├── requirements.txt
+└── .env.example
 ```
 
 ---
@@ -71,47 +66,53 @@ You're not just starting a podcast — you're building a **fully autonomous AI-p
 
 ---
 
-## ⚡ Quick Start (Python Agent)
+## ⚡ Free Installation
 
-### 1. Clone the repo
+### Prerequisites
+- Python 3.11+ → [python.org](https://python.org)
+- Git → [git-scm.com](https://git-scm.com)
+
+### Install
+
 ```bash
+# 1. Clone the repo
 git clone https://github.com/firaseth/firasai-podcast.git
-cd firasai-podcast/agent
-```
+cd firasai-podcast
 
-### 2. Create a virtual environment
-```bash
-python -m venv venv
-source venv/bin/activate        # Mac/Linux
-venv\Scripts\activate           # Windows
-```
-
-### 3. Install dependencies
-```bash
+# 2. Install dependencies
 pip install -r requirements.txt
-```
 
-### 4. Configure environment variables
-```bash
+# 3. Set up environment
 cp .env.example .env
-# Edit .env and fill in your API keys
-```
+# Open .env and add your API keys
 
-### 5. Run the agent
-```bash
+# 4. Run
 python main.py
 ```
 
 ---
 
-## 🐳 Docker Setup
+## 🖥️ Deployment Options
 
-```bash
-cd agent
-docker-compose build
-docker-compose up -d
-docker-compose logs -f
-```
+See the full guide → [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+### Option 1 — Local (Free, Easiest)
+Run on your own PC. Zero cost. Works immediately.
+
+### Option 2 — Railway.app (Free Cloud, Always On)
+Deploy to the cloud in 5 minutes using your GitHub repo. No server management.
+
+### Option 3 — Ollama (Zero API Cost)
+Run open-source AI models locally. No OpenAI bills — ever.
+
+| | Local | Railway | Ollama |
+|---|---|---|---|
+| Cost | Free | Free tier | Free |
+| Always on | ❌ | ✅ | ❌ |
+| Setup | Easy | Easy | Medium |
+| AI quality | GPT-4 | GPT-4 | Good |
+
+> **Start here:** Local + Ollama = zero cost. Scale to Railway when ready.
 
 ---
 
@@ -140,21 +141,9 @@ docker-compose logs -f
 
 ---
 
-## 🏗️ Tech Stack Overview
-
-**Content & AI:** ChatGPT · Claude · Perplexity AI · Notion AI  
-**Audio:** Riverside.fm · Descript · Adobe Podcast Enhance · Auphonic  
-**Voice:** ElevenLabs · Play.ht  
-**Distribution:** Buzzsprout · Transistor · Captivate  
-**Repurposing:** Opus Clip · Headliner · Castmagic  
-**Automation:** Make.com · n8n  
-**Newsletter:** Beehiiv · Substack  
-
----
-
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to contribute prompts, agent improvements, or automation blueprints.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ---
 
