@@ -4,6 +4,7 @@ setup(
     name="firasai-podcast",
     version="0.1.0",
     packages=find_packages(),
+    python_requires=">=3.9",
     install_requires=[
         "openai>=2.0.0",
         "anthropic==0.18.1",
