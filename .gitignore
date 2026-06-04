@@ -1,0 +1,28 @@
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+dist/
+build/
+*.egg-info/
+
+# Audio / media
+*.mp3
+*.wav
+*.mp4
+/tmp/
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+data/
