@@ -1,0 +1,65 @@
+<svg width="100%" viewBox="0 0 680 280" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>FirasAi Podcast Banner</title>
+<desc>Dark banner showing FirasAi podcast brand with microphone and topics</desc>
+
+<!-- Background -->
+<rect width="680" height="280" fill="#0d1117" rx="12"/>
+
+<!-- Decorative circles -->
+<circle cx="560" cy="60" r="90" fill="#1a2332" opacity="0.8"/>
+<circle cx="580" cy="80" r="55" fill="#1e2d42" opacity="0.7"/>
+<circle cx="120" cy="220" r="70" fill="#1a2332" opacity="0.5"/>
+
+<!-- Mic stand -->
+<rect x="327" y="195" width="26" height="6" rx="3" fill="#30363d"/>
+<rect x="337" y="145" width="6" height="52" rx="3" fill="#30363d"/>
+
+<!-- Microphone body -->
+<rect x="320" y="95" width="40" height="60" rx="20" fill="#238636"/>
+<rect x="323" y="98" width="34" height="54" rx="18" fill="#2ea043"/>
+<line x1="326" y1="112" x2="354" y2="112" stroke="#1a7a30" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="324" y1="120" x2="356" y2="120" stroke="#1a7a30" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="324" y1="128" x2="356" y2="128" stroke="#1a7a30" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="326" y1="136" x2="354" y2="136" stroke="#1a7a30" stroke-width="1.5" stroke-linecap="round"/>
+
+<!-- Sound waves left -->
+<path d="M308 115 Q296 125 308 135" fill="none" stroke="#2ea043" stroke-width="2" stroke-linecap="round"/>
+<path d="M298 108 Q280 125 298 142" fill="none" stroke="#238636" stroke-width="2" stroke-linecap="round"/>
+<path d="M288 101 Q264 125 288 149" fill="none" stroke="#1a7a30" stroke-width="1.5" stroke-linecap="round"/>
+
+<!-- Sound waves right -->
+<path d="M372 115 Q384 125 372 135" fill="none" stroke="#2ea043" stroke-width="2" stroke-linecap="round"/>
+<path d="M382 108 Q400 125 382 142" fill="none" stroke="#238636" stroke-width="2" stroke-linecap="round"/>
+<path d="M392 101 Q416 125 392 149" fill="none" stroke="#1a7a30" stroke-width="1.5" stroke-linecap="round"/>
+
+<!-- Main title -->
+<text x="340" y="58" text-anchor="middle" fill="#f0f6fc" font-family="system-ui, sans-serif" font-size="38" font-weight="700" letter-spacing="-1">FirasAi</text>
+
+<!-- Subtitle -->
+<text x="340" y="80" text-anchor="middle" fill="#8b949e" font-family="system-ui, sans-serif" font-size="13" font-weight="400" letter-spacing="2">WHERE AI MEETS MONEY, MARKETS &amp; THE FUTURE</text>
+
+<!-- Divider -->
+<line x1="200" y1="220" x2="480" y2="220" stroke="#21262d" stroke-width="1"/>
+
+<!-- Topic pills -->
+<rect x="40" y="234" width="60" height="24" rx="12" fill="#1f2d1f"/>
+<text x="70" y="251" text-anchor="middle" fill="#3fb950" font-family="system-ui, sans-serif" font-size="11" font-weight="500">AI</text>
+
+<rect x="112" y="234" width="80" height="24" rx="12" fill="#1a2332"/>
+<text x="152" y="251" text-anchor="middle" fill="#58a6ff" font-family="system-ui, sans-serif" font-size="11" font-weight="500">Business</text>
+
+<rect x="204" y="234" width="76" height="24" rx="12" fill="#2d1f1f"/>
+<text x="242" y="251" text-anchor="middle" fill="#f78166" font-family="system-ui, sans-serif" font-size="11" font-weight="500">Finance</text>
+
+<rect x="292" y="234" width="68" height="24" rx="12" fill="#2d2a1f"/>
+<text x="326" y="251" text-anchor="middle" fill="#d29922" font-family="system-ui, sans-serif" font-size="11" font-weight="500">Crypto</text>
+
+<rect x="372" y="234" width="56" height="24" rx="12" fill="#261f2d"/>
+<text x="400" y="251" text-anchor="middle" fill="#bc8cff" font-family="system-ui, sans-serif" font-size="11" font-weight="500">NFT</text>
+
+<rect x="440" y="234" width="64" height="24" rx="12" fill="#1f2532"/>
+<text x="472" y="251" text-anchor="middle" fill="#79c0ff" font-family="system-ui, sans-serif" font-size="11" font-weight="500">Sports</text>
+
+<!-- Bottom tagline -->
+<text x="340" y="275" text-anchor="middle" fill="#484f58" font-family="system-ui, sans-serif" font-size="11">github.com/firaseth/firasai-podcast</text>
+</svg>
