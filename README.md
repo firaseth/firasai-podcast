@@ -5,7 +5,6 @@
 
 A complete, production-ready system for launching and running an **autonomous AI-powered podcast business** — covering AI, business, finance, crypto, NFTs, and sports.
 
-![FirasAi Podcast](./banner.svg)
 
 ---
 
