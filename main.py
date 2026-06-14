@@ -21,17 +21,12 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional
+from contextlib import asynccontextmanager
 
 # Initialize DB and Config
 db = DbTool()
 config_obj = Config()
 
-# Define FastAPI Web Server
-app = FastAPI(
-    title="🎙️ FirasAi Podcast Agent API",
-    description="The live backend API, management dashboard data source, and web webhook triggers for your autonomous podcast.",
-    version="1.1.0"
-)
 
 class EpisodeRequest(BaseModel):
     topic: Optional[str] = None
@@ -234,6 +229,30 @@ class FirasAiAgent:
 
 # Initialize global agent instance
 agent = FirasAiAgent()
+
+
+# ── Lifespan Manager (Removes deprecated on_event warning) ────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup actions
+    if not os.environ.get("VERCEL") and not os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        print("⏰ Starting background scheduler thread...")
+        daemon_thread = threading.Thread(target=agent.start_scheduler_loop, daemon=True)
+        daemon_thread.start()
+    else:
+        print("☁️ Vercel Serverless environment detected. Disabling persistent background scheduler thread (use Vercel Cron/Webhooks instead).")
+    yield
+    # Shutdown actions (if any) would go here
+
+
+# Define FastAPI Web Server using modern lifespan
+app = FastAPI(
+    title="🎙️ FirasAi Podcast Agent API",
+    description="The live backend API, management dashboard data source, and web webhook triggers for your autonomous podcast.",
+    version="1.1.0",
+    lifespan=lifespan
+)
 
 
 # ── FastAPI Web Endpoints ───────────────────────────────────────────────────
@@ -576,18 +595,6 @@ def trigger_check_responses(background_tasks: BackgroundTasks):
     """Trigger Notion guest response updates in the background."""
     background_tasks.add_task(agent.check_responses)
     return {"message": "Guest response pipeline started in background"}
-
-
-# Startup background scheduler thread when running as API server
-@app.on_event("startup")
-def start_scheduler_on_startup():
-    # Only start background thread if NOT on Vercel serverless environment
-    if not os.environ.get("VERCEL") and not os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
-        print("⏰ Starting background scheduler thread...")
-        daemon_thread = threading.Thread(target=agent.start_scheduler_loop, daemon=True)
-        daemon_thread.start()
-    else:
-        print("☁️ Vercel Serverless environment detected. Disabling persistent background scheduler thread (use Vercel Cron/Webhooks instead).")
 
 
 if __name__ == "__main__":
