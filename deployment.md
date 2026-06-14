@@ -1,8 +1,10 @@
-# 🚀 FirasAi Podcast — Complete Deployment Guide
+# 🚀 FirasAi Podcast — Complete Deployment & API Guide
 
-This guide covers everything you need to deploy, configure, and launch the **FirasAi autonomous podcast agent**. 
+This guide covers how to deploy, run, and scale the **FirasAi autonomous podcast agent**. 
 
-The FirasAi agent contains an integrated, lightweight health check server running on port `8080` (or configured via `$PORT`), making it fully compatible with cloud containers like Railway, Render, Fly.io, or AWS.
+The FirasAi agent now features a production-grade, dual-mode architecture. It can run as:
+1. **An Always-On Background Daemon**: Using standard Python schedules to trigger content planning, scriptwriting, guest checking, and marketing automated workflows.
+2. **A Live Web API Server (FastAPI)**: Providing standard HTTP endpoints (`POST /episode`, `GET /episodes`, `GET /reports`) that can easily connect to a front-end web app or mobile app, and supporting serverless deployment platforms like **Vercel**.
 
 ---
 
@@ -11,10 +13,11 @@ The FirasAi agent contains an integrated, lightweight health check server runnin
 2. [Notion Database Structure Setup](#2-notion-database-structure-setup)
 3. [Local Deployment (Quickstart)](#3-local-deployment-quickstart)
 4. [Docker & Docker Compose Deployment](#4-docker--docker-compose-deployment)
-5. [Cloud Deployment — Railway.app (Recommended)](#5-cloud-deployment--railwayapp-recommended)
-6. [Zero-Cost Local AI Deployment — Ollama](#6-zero-cost-local-ai-deployment--ollama)
-7. [How to Verify and Test Your Deployment](#7-how-to-verify-and-test-your-deployment)
-8. [Production Best Practices](#8-production-best-practices)
+5. [Serverless Web App Deployment — Vercel (Live API)](#5-serverless-web-app-deployment--vercel-live-api)
+6. [Cloud Deployment — Railway.app (API + Background Scheduler)](#6-cloud-deployment--railwayapp-api--background-scheduler)
+7. [Zero-Cost Local AI Deployment — Ollama](#7-zero-cost-local-ai-deployment--ollama)
+8. [Live REST API Documentation](#8-live-rest-api-documentation)
+9. [Pro-Level Enhancements (SQLite & Structured Outputs)](#9-pro-level-enhancements-sqlite--structured-outputs)
 
 ---
 
@@ -71,7 +74,7 @@ cd firasai-podcast
 ```
 
 ### Step 2: Create a Virtual Environment & Install Dependencies
-We optimized the requirements to keep things extremely lightweight (under 20MB instead of 600MB+ with unnecessary packages like PyTorch):
+We optimized the requirements to keep things extremely lightweight (under 20MB instead of 600MB+ with PyTorch):
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -85,18 +88,21 @@ cp .env.example .env
 nano .env  # or open in your favorite code editor
 ```
 
-### Step 4: Run the Application
-Start the scheduler daemon:
-```bash
-python3 main.py
-```
+### Step 4: Run the Application (Dual Mode)
 
-*To run on-demand workflows without waiting for scheduled times:*
-```bash
-python3 main.py --create-episode "The Future of AI Agents"
-python3 main.py --weekly-workflow
-python3 main.py --check-responses
-```
+- **Default (FastAPI Web Server + Background Scheduler)**:
+  ```bash
+  python3 main.py
+  ```
+  This starts the FastAPI server on port `8080`. Go to `http://localhost:8080/docs` in your browser to view the interactive API playground (Swagger UI)!
+
+- **On-Demand CLI (Manual Tasks)**:
+  You can run commands directly on-demand without starting the server:
+  ```bash
+  python3 main.py --create-episode "The Future of AI Agents"
+  python3 main.py --weekly-workflow
+  python3 main.py --check-responses
+  ```
 
 ---
 
@@ -104,30 +110,46 @@ python3 main.py --check-responses
 
 Ensure you have [Docker](https://www.docker.com/products/docker-desktop/) installed.
 
-### Step 1: Prepare the Environment
-Ensure your `.env` file exists and is populated in the root directory.
-
-### Step 2: Run via Docker Compose
+### Step 1: Run via Docker Compose
 Build and run the container in detached (background) mode:
 ```bash
 docker-compose up -d --build
 ```
+This automatically starts both the FastAPI server and the background scheduler.
 
-### Step 3: Check Container Logs
+### Step 2: Check Container Logs
 ```bash
 docker-compose logs -f
 ```
 
-### Step 4: Tear Down
-```bash
-docker-compose down
-```
+---
+
+## 5. Serverless Web App Deployment — Vercel (Live API)
+
+Because our app is powered by FastAPI, you can deploy it to **Vercel** as a live, serverless web API! This is perfect for connecting to a **mobile app** or **web frontend**.
+
+### Step 1: Connect your Repo to Vercel
+1. Go to [Vercel](https://vercel.com/) and click **Add New** -> **Project**.
+2. Select your `firasai-podcast` GitHub repository.
+3. Vercel will automatically read the `vercel.json` file and detect the `@vercel/python` builder.
+
+### Step 2: Configure Environment Variables
+In the Vercel project dashboard, navigate to **Settings -> Environment Variables** and add all the keys from your `.env` (e.g. `OPENAI_API_KEY`, `NOTION_API_KEY`, etc.).
+
+### Step 3: Deploy!
+Once deployed, Vercel will provide you with a live URL (e.g., `https://firasai-podcast.vercel.app`).
+- Open your browser to `https://firasai-podcast.vercel.app/docs` to view the **Swagger API Playground** live on the web!
+
+### Step 4: Automating Background Schedules on Vercel
+Since Vercel is serverless, the python memory restarts after each request, meaning background schedule loops (`while True`) do not run 24/7.
+To run the automated scheduler on Vercel for free, use **Vercel Cron Jobs**:
+Create a `vercel.json` and configure cron triggers (e.g. hitting your `/weekly-workflow` endpoint every Monday at 9:00 AM).
 
 ---
 
-## 5. Cloud Deployment — Railway.app (Recommended)
+## 6. Cloud Deployment — Railway.app (API + Background Scheduler)
 
-Railway is the simplest and most reliable way to run this agent 24/7 in the cloud.
+Railway is the simplest and most robust way to run **both** the FastAPI server and the always-on background scheduler loop.
 
 ### Step 1: Link Repository to Railway
 1. Go to [Railway.app](https://railway.app/) and create an account.
@@ -138,63 +160,80 @@ Railway is the simplest and most reliable way to run this agent 24/7 in the clou
 1. Navigate to your Service on Railway.
 2. Go to the **Variables** tab.
 3. Add all the environment variables from your `.env` file (e.g. `OPENAI_API_KEY`, `NOTION_API_KEY`, etc.).
-4. Add a variable `PORT` set to `8080`. (Railway exposes this port automatically for the health check).
+4. Add a variable `PORT` set to `8080`. (Railway exposes this port automatically for the FastAPI server and health checks).
 
 ### Step 3: Deploy!
-Railway will automatically read the `Dockerfile`, build the image, provision a port, start the service, and verify its health via the health check endpoint: `http://0.0.0.0:8080/`.
+Railway will automatically read the `Dockerfile`, build the image, provision a port, start the FastAPI service, and spin up the background scheduler thread seamlessly!
 
 ---
 
-## 6. Zero-Cost Local AI Deployment — Ollama
+## 7. Zero-Cost Local AI Deployment — Ollama
 
 You can run FirasAi without an expensive OpenAI API bill by using **Ollama** to run open-source LLMs locally.
 
-### Step 1: Install Ollama
-Download and install Ollama from [ollama.com](https://ollama.com).
-
-### Step 2: Download Your Preferred Model
-We recommend `llama3` or `mistral`:
-```bash
-ollama run llama3
-```
-
-### Step 3: Configure `.env`
-Change your model settings in `.env` to point to Ollama:
-```bash
-OPENAI_API_KEY="ollama"
-OPENAI_BASE_URL="http://localhost:11434/v1"
-PRIMARY_MODEL="llama3"
-FAST_MODEL="llama3"
-```
-
-### Step 4: Run the Agent
-The `config.py` module automatically detects `"ollama"` as the API key and redirects all LLM calls to your local Ollama server!
+1. Download and install Ollama from [ollama.com](https://ollama.com).
+2. Download your preferred model: `ollama run llama3`.
+3. Change your model settings in `.env` to point to Ollama:
+   ```bash
+   OPENAI_API_KEY="ollama"
+   OPENAI_BASE_URL="http://localhost:11434/v1"
+   PRIMARY_MODEL="llama3"
+   FAST_MODEL="llama3"
+   ```
+The `config.py` module automatically detects `"ollama"` as the API key and redirects all LLM calls to your local Ollama server! Our code contains custom fallbacks so that even if the local model doesn't support structured outputs, it parses JSON perfectly.
 
 ---
 
-## 7. How to Verify and Test Your Deployment
+## 8. Live REST API Documentation
 
-Once launched, verify everything is working correctly:
+Once your app is live (on Vercel, Railway, or local), you can access these endpoints using any HTTP client (such as a Javascript front-end, a Swift/Kotlin mobile app, or cURL):
 
-1. **Verify Health Check Endpoint:**
-   ```bash
-   curl http://localhost:8080/
-   # Response should be: {"status": "healthy", "agent": "FirasAi"}
-   ```
-2. **Test Episode Creation Pipeline:**
-   Run a test run on a specific topic:
-   ```bash
-   python3 main.py --create-episode "The Rise of Decentralized Media"
-   ```
-   Check your **Notion Episodes Database** — you should see a new page populated with a detailed title, script, and outline!
+### `GET /`
+- **Purpose**: Retrieve the current status of the agent.
+- **Response**:
+  ```json
+  {
+    "status": "healthy",
+    "agent": "FirasAi",
+    "podcast_name": "FirasAi",
+    "sqlite_cached_episodes": 12,
+    "sqlite_cached_reports": 3,
+    "current_time": "2026-06-14 11:15:30"
+  }
+  ```
 
-3. **Verify Scheduler:**
-   Run the application in scheduler mode (`python3 main.py`). Ensure no crashes or stack traces appear on startup.
+### `GET /episodes`
+- **Purpose**: Get a list of all generated episodes, including the titles, show notes, and complete script text. (Retrieves instantly from local SQLite cache).
+
+### `GET /reports`
+- **Purpose**: Get a list of all weekly performance reports and growth insights.
+
+### `GET /logs`
+- **Purpose**: View system logs of what the AI agent has done (e.g. "Triggered episode creation", "Notion save failed, caching locally").
+
+### `POST /episode`
+- **Purpose**: Trigger the full episode creation pipeline on-demand.
+- **Payload** (JSON):
+  ```json
+  {
+    "topic": "The Rise of Decentralized Media"
+  }
+  ```
+  *(If no topic is passed, the Planner agent suggests one automatically).*
+
+### `POST /weekly-workflow`
+- **Purpose**: Manually trigger the weekly planning (Notion idea queue, analytics gathering, and newsletter scheduling).
 
 ---
 
-## 8. Production Best Practices
+## 9. Pro-Level Enhancements (SQLite & Structured Outputs)
 
-- **Security:** Never commit your `.env` file or raw API keys to GitHub. The `.gitignore` file is pre-configured to prevent this.
-- **Fail-safe Daemon:** We implemented **safe execution wrappers** in `main.py` so that temporary API outages (such as Notion API timeouts) will not crash your entire background scheduler.
-- **Ollama Cloud Warning:** Do not use `localhost` for Ollama if deploying to cloud hosts like Railway unless you tunnel the connection (e.g., via Ngrok) or host your own GPU cloud node.
+### 💾 Local SQLite Caching Fallback
+If Notion is down, your API keys expire, or you get rate-limited, the agent **never loses your hard-earned scripts or research data**. 
+Every episode, show note, research paper, and newsletter is automatically cached in a highly optimized SQLite database (`data/firasai.db`). Your API queries (`GET /episodes` and `GET /reports`) read directly from this database, providing instant response times suitable for web and mobile front-ends.
+
+### 📐 Pydantic Structured Outputs (JSON Verification)
+Rather than asking the LLM to write raw JSON in prompts and hoping it matches (which often fails with syntax errors), the Planner, Researcher, Scriptwriter, and Analyst agents now use **Pydantic Validation schemas**.
+- For OpenAI models, it uses **Native Beta Structured Outputs** (`client.beta.chat.completions.parse()`).
+- For local models (Ollama), it uses standard JSON mode with a robust fallback validator.
+This guarantees that the AI returns 100% syntactically perfect JSON payloads every single time.

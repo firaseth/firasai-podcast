@@ -10,5 +10,8 @@ setup(
         "requests>=2.31.0",
         "python-dotenv>=1.0.1",
         "schedule>=1.2.1",
+        "fastapi>=0.110.0",
+        "uvicorn>=0.28.0",
+        "pydantic>=2.0.0",
     ],
 )

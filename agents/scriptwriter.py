@@ -1,6 +1,6 @@
 import json
 from openai import OpenAI
-
+from agents.schemas import ShowNotes, StructuredResearch
 
 class ScriptwriterAgent:
     def __init__(self, config):
@@ -10,12 +10,17 @@ class ScriptwriterAgent:
     def write_script(
         self,
         topic: str,
-        research: dict,
+        research: StructuredResearch | dict,
         length: str = "30 minutes",
         format_type: str = "solo",
     ) -> dict:
         """Write a complete FirasAi podcast script with supporting assets."""
-        prompt = self._build_prompt(topic, research, length, format_type)
+        # Convert research to dictionary if it's a Pydantic model
+        research_dict = research
+        if hasattr(research, "model_dump"):
+            research_dict = research.model_dump()
+
+        prompt = self._build_prompt(topic, research_dict, length, format_type)
 
         response = self.client.chat.completions.create(
             model=self.config.PRIMARY_MODEL,
@@ -34,11 +39,17 @@ class ScriptwriterAgent:
         )
 
         script_text = response.choices[0].message.content
+        show_notes = self._generate_show_notes(script_text, topic)
+
+        # Convert show_notes to dictionary if it is a Pydantic object
+        show_notes_dict = show_notes
+        if hasattr(show_notes, "model_dump"):
+            show_notes_dict = show_notes.model_dump()
 
         return {
             "title": self._extract_title(script_text, topic),
             "content": script_text,
-            "show_notes": self._generate_show_notes(script_text, topic),
+            "show_notes": show_notes_dict,
             "hooks": self._generate_hooks(topic),
             "quotes": self._extract_quotes(script_text),
             "word_count": len(script_text.split()),
@@ -72,19 +83,41 @@ STRUCTURE:
 Write the full script now.
 """
 
-    def _generate_show_notes(self, script: str, topic: str) -> dict:
+    def _generate_show_notes(self, script: str, topic: str) -> ShowNotes:
         prompt = f"""
 Generate complete show notes for this {self.config.PODCAST_NAME} episode.
 Topic: {topic}
 Script excerpt: {script[:3000]}...
-Return JSON: title, hook (1 sentence), takeaways (3 bullets), timestamps (list), keywords (5).
+
+You must return a JSON object with:
+- title (str): Episode Title
+- hook (str): 1-sentence episode hook/summary
+- takeaways (list of str): 3-bullet key takeaways
+- timestamps (list of str): List of chapters/timestamps in format "[05:12] Chapter Title"
+- keywords (list of str): 5 highly relevant SEO keywords
 """
+        api_key = self.config.OPENAI_API_KEY
+        base_url = getattr(self.config, "OPENAI_BASE_URL", None) or ""
+        is_ollama = api_key == "ollama" or "localhost" in base_url or "127.0.0.1" in base_url
+
+        if not is_ollama:
+            try:
+                response = self.client.beta.chat.completions.parse(
+                    model=self.config.PRIMARY_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    response_format=ShowNotes,
+                )
+                return response.choices[0].message.parsed
+            except Exception as e:
+                print(f"[ScriptwriterAgent] OpenAI parsing failed ({e}), falling back to standard JSON parsing...")
+
         response = self.client.chat.completions.create(
             model=self.config.PRIMARY_MODEL,
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
         )
-        return json.loads(response.choices[0].message.content)
+        data = json.loads(response.choices[0].message.content)
+        return ShowNotes.model_validate(data)
 
     def _generate_hooks(self, topic: str) -> str:
         prompt = f"""
