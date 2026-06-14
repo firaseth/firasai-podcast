@@ -259,8 +259,13 @@ def trigger_check_responses(background_tasks: BackgroundTasks):
 # Startup background scheduler thread when running as API server
 @app.on_event("startup")
 def start_scheduler_on_startup():
-    daemon_thread = threading.Thread(target=agent.start_scheduler_loop, daemon=True)
-    daemon_thread.start()
+    # Only start background thread if NOT on Vercel serverless environment
+    if not os.environ.get("VERCEL") and not os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        print("⏰ Starting background scheduler thread...")
+        daemon_thread = threading.Thread(target=agent.start_scheduler_loop, daemon=True)
+        daemon_thread.start()
+    else:
+        print("☁️ Vercel Serverless environment detected. Disabling persistent background scheduler thread (use Vercel Cron/Webhooks instead).")
 
 
 if __name__ == "__main__":

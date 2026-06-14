@@ -4,10 +4,19 @@ import os
 from datetime import datetime
 
 class DbTool:
-    def __init__(self, db_path="data/firasai.db"):
+    def __init__(self, db_path=None):
+        if db_path is None:
+            # Vercel is a read-only filesystem except for /tmp
+            if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+                db_path = "/tmp/firasai.db"
+            else:
+                db_path = "data/firasai.db"
         self.db_path = db_path
+        
         # Ensure data directory exists
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        dir_name = os.path.dirname(self.db_path)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
         self._init_db()
 
     def _get_connection(self):
