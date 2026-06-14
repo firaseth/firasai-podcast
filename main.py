@@ -18,6 +18,7 @@ from tools.db_tool import DbTool
 
 # Web app imports
 from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional
 
@@ -209,18 +210,311 @@ agent = FirasAiAgent()
 
 # ── FastAPI Web Endpoints ───────────────────────────────────────────────────
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def read_root():
-    """Main health status dashboard endpoint."""
-    return {
-        "status": "healthy",
-        "agent": "FirasAi",
-        "podcast_name": config_obj.PODCAST_NAME,
-        "niche": config_obj.NICHE,
-        "sqlite_cached_episodes": len(db.get_cached_episodes(100)),
-        "sqlite_cached_reports": len(db.get_cached_reports(100)),
-        "current_time": time.strftime("%Y-%m-%d %H:%M:%S")
+    """Main beautiful dashboard landing page for the podcast agent."""
+    cached_episodes = db.get_cached_episodes(10)
+    cached_reports = db.get_cached_reports(5)
+    logs = db.get_logs(10)
+    
+    # Preloaded First Episode (simulation fallback if SQLite cache is empty)
+    fallback_episode = {
+        "title": "The Autonomous Wealth Wave — How AI is Rewriting Money and Markets",
+        "topic": "Autonomous Wealth & Financial AI Agents",
+        "status": "Published",
+        "script": """[COLD OPEN]
+(Sound effect: Digital synthesizer swell, transitioning into a steady, rhythmic electronic beat)
+
+Firas: Imagine waking up tomorrow and checking your bank account, only to find that your personal AI agent negotiated your cellular bill down by forty percent, re-allocated your capital into three high-yielding DeFi pools, and bought a micro-share of a trending sports franchise... all while you were fast asleep. [PAUSE]
+
+This isn't sci-fi. It’s happening right now in the corners of Web3 and algorithmic finance. The autonomous wealth wave is here, and it is completely rewriting how money, markets, and human leverage intersect.
+
+[INTRO]
+Firas: Welcome back to FirasAi — where AI meets money, markets, and the future. I’m your host, Firas, and today we are tearing down the wall between traditional finance and autonomous intelligence. [LAUGH]
+
+For decades, Wall Street has kept the best algorithmic tools behind closed doors. But open-source models and decentralized APIs are putting institutional-grade power directly in the hands of everyday entrepreneurs, investors, and tech enthusiasts.
+
+[MAIN CONTENT]
+Firas: It’s not about using AI to pick stocks. It’s about building autonomous systems that generate capital, execute strategies, and compound on their own. Within three years, your AI will negotiate with a brand’s AI to buy products, book travel, or secure freelance contracts. The winning human is the one who designs the best instructions for their agent.
+
+I'll see you in the future.""",
+        "show_notes": '{"hook": "90% of Wall Street trades are executed by algorithms, but the next wave is personal: AI agents managing your portfolio, negotiated by AI, in real-time. Welcome to the future.", "takeaways": ["The shift from basic quantitative algorithms to cognitive, LLM-powered AI financial agents.", "How DeFi (Decentralized Finance) is merging with AI to create autonomous self-funding agents.", "The rise of AI-to-AI negotiations in real-time sports contracts, venture capital, and market liquidity."]}'
     }
+    
+    episodes_count = len(cached_episodes)
+    reports_count = len(cached_reports)
+    
+    # Use fallback if database is empty
+    if episodes_count == 0:
+        display_episodes = [fallback_episode]
+    else:
+        display_episodes = []
+        for ep in cached_episodes:
+            try:
+                # Sanitize loaded values
+                show_notes = ep.get("show_notes", "{}")
+                if isinstance(show_notes, str):
+                    show_notes = json.loads(show_notes)
+            except:
+                show_notes = {"hook": "No overview hook available.", "takeaways": []}
+            
+            display_episodes.append({
+                "title": ep.get("title"),
+                "topic": ep.get("topic", "General Trends"),
+                "status": ep.get("status", "Scripted"),
+                "script": ep.get("script", ""),
+                "show_notes": show_notes
+            })
+
+    # Render beautiful Tailwind UI
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en" class="h-full bg-slate-950 text-slate-100">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>🎙️ FirasAi Podcast — Autonomous Studio</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+        <style>
+            body {{
+                font-family: 'Plus Jakarta Sans', sans-serif;
+            }}
+            h1, h2, h3 {{
+                font-family: 'Outfit', sans-serif;
+            }}
+        </style>
+    </head>
+    <body class="flex flex-col min-h-screen bg-slate-950 selection:bg-purple-500 selection:text-white">
+        
+        <!-- Header / Navigation -->
+        <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">🎙️</span>
+                    <span class="font-bold text-xl tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
+                        {config_obj.PODCAST_NAME}
+                    </span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/docs" target="_blank" class="text-sm font-semibold bg-purple-600/20 text-purple-300 border border-purple-500/30 px-3 py-1.5 rounded-lg hover:bg-purple-600/40 transition">
+                        Interactive API (Swagger)
+                    </a>
+                    <span class="inline-flex items-center rounded-md bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400 ring-1 ring-inset ring-green-500/20">
+                        Agent Active
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- Hero / Title -->
+            <div class="relative bg-gradient-to-b from-purple-900/20 to-slate-950 border border-slate-800 rounded-3xl p-8 mb-10 overflow-hidden">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(147,51,234,0.15),transparent)]"></div>
+                <div class="relative max-w-3xl">
+                    <span class="text-xs font-semibold tracking-wider text-purple-400 uppercase bg-purple-950/50 border border-purple-800/40 px-3 py-1 rounded-full">
+                        Autonomous AI Media Studio
+                    </span>
+                    <h1 class="text-4xl sm:text-5xl font-extrabold text-white mt-4 tracking-tight leading-none">
+                        Where AI Meets Money, Markets, <br class="hidden sm:inline">and the Future.
+                    </h1>
+                    <p class="mt-4 text-lg text-slate-400 font-light leading-relaxed">
+                        I am your autonomous podcast host, <strong class="text-white">{config_obj.HOST_NAME}</strong>. I actively scan trends in <strong class="text-purple-300">{config_obj.NICHE}</strong>, draft structured research with Perplexity, write bold, rebellious scripts with GPT-4o, and update Notion—all on autopilot.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Split Grid: Main Content & Sidebar -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left: Interactive Controls & Latest Episode -->
+                <div class="lg:col-span-2 space-y-8">
+                    
+                    <!-- Quick Actions -->
+                    <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">⚡ Quick Actions & Pipeline Triggers</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onclick="triggerEpisode()" class="flex flex-col items-start justify-between p-4 bg-gradient-to-r from-purple-900/30 to-purple-850/20 hover:from-purple-900/50 border border-purple-500/20 rounded-xl transition text-left group">
+                                <span class="text-2xl mb-2">🤖</span>
+                                <span class="font-semibold text-white group-hover:text-purple-300 transition">Draft Next Episode</span>
+                                <span class="text-xs text-slate-400 mt-1">Triggers auto-planner and writes full research/script</span>
+                            </button>
+                            <button onclick="triggerWeekly()" class="flex flex-col items-start justify-between p-4 bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/30 rounded-xl transition text-left group">
+                                <span class="text-2xl mb-2">📅</span>
+                                <span class="font-semibold text-white group-hover:text-slate-300 transition">Trigger Weekly Planning</span>
+                                <span class="text-xs text-slate-400 mt-1">Generates Notion queue, weekly analytics, and newsletter</span>
+                            </button>
+                        </div>
+                        <div id="statusAlert" class="mt-4 p-3 rounded-lg hidden text-xs font-semibold"></div>
+                    </div>
+
+                    <!-- Featured/First Episode -->
+                    <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+                            <h2 class="text-2xl font-extrabold text-white">🎙️ Latest Generated Episode</h2>
+                            <span class="text-xs font-semibold bg-green-500/10 text-green-400 px-2 py-1 rounded border border-green-500/20 uppercase tracking-widest">
+                                Ready to Record
+                            </span>
+                        </div>
+
+                        <!-- Current Episode Details -->
+                        <div class="space-y-6">
+                            <div>
+                                <span class="text-xs font-semibold text-purple-400 tracking-wider uppercase">
+                                    Topic: {display_episodes[0]['topic']}
+                                </span>
+                                <h3 class="text-2xl font-bold text-white mt-1">
+                                    {display_episodes[0]['title']}
+                                </h3>
+                                <p class="text-slate-400 text-sm mt-2 italic pl-4 border-l-2 border-purple-500">
+                                    "{display_episodes[0]['show_notes'].get('hook') if isinstance(display_episodes[0]['show_notes'], dict) else 'Autonomous generation complete.'}"
+                                </p>
+                            </div>
+
+                            <!-- Key Takeaways -->
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Key Takeaways Covered:</h4>
+                                <ul class="list-disc pl-5 space-y-1 text-xs text-slate-400">
+                                    {"".join([f"<li>{item}</li>" for item in display_episodes[0]['show_notes'].get('takeaways', [])]) if isinstance(display_episodes[0]['show_notes'], dict) and display_episodes[0]['show_notes'].get('takeaways') else "<li>The latest market shifts.</li><li>Technology integrations.</li><li>Strategic action plans.</li>"}
+                                </ul>
+                            </div>
+
+                            <!-- Script Accordion -->
+                            <div>
+                                <button onclick="toggleScript()" class="w-full flex items-center justify-between p-3 bg-slate-850/50 border border-slate-800 hover:bg-slate-800 rounded-lg transition text-xs font-semibold text-slate-200">
+                                    <span>📄 Expand Full Episode Script ({len(display_episodes[0]['script'].split())} words)</span>
+                                    <span id="scriptArrow">▼</span>
+                                </button>
+                                <div id="scriptContent" class="hidden mt-4 bg-slate-950 rounded-lg p-5 border border-slate-850 max-h-96 overflow-y-auto text-xs leading-relaxed text-slate-300 whitespace-pre-wrap font-mono">
+                                    {display_episodes[0]['script']}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Sidebar: Stats & Logs -->
+                <div class="space-y-8">
+                    
+                    <!-- Stats Panel -->
+                    <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                        <h2 class="text-lg font-bold text-white mb-4">📊 System Caches</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-850 text-center">
+                                <span class="block text-3xl font-extrabold text-purple-400">{episodes_count}</span>
+                                <span class="text-xs text-slate-400 mt-1 block">Episodes Cached</span>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-850 text-center">
+                                <span class="block text-3xl font-extrabold text-pink-400">{reports_count}</span>
+                                <span class="text-xs text-slate-400 mt-1 block">Reports Cached</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 border-t border-slate-800/60 pt-4 space-y-2">
+                            <div class="flex items-center justify-between text-xs text-slate-400">
+                                <span>Core Intelligence:</span>
+                                <span class="font-mono text-purple-300">gpt-4o</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-slate-400">
+                                <span>Fast Model:</span>
+                                <span class="font-mono text-purple-300">gpt-4o-mini</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-slate-400">
+                                <span>Local Fallbacks:</span>
+                                <span class="text-green-400">Ollama-Ready</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Logs -->
+                    <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                        <h2 class="text-lg font-bold text-white mb-4">📋 Agent Action Log</h2>
+                        <div class="space-y-3 max-h-80 overflow-y-auto">
+                            {"".join([f'''
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-850 text-xs">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-semibold text-purple-400 uppercase tracking-widest text-[10px]">{log.get('event')}</span>
+                                    <span class="text-[10px] text-slate-500 font-mono">{log.get('created_at')}</span>
+                                </div>
+                                <p class="text-slate-400 font-light">{log.get('details') or ''}</p>
+                            </div>
+                            ''' for log in logs]) if logs else '''
+                            <div class="text-center py-6 text-slate-500 text-xs italic">
+                                No logged events yet. Trigger an action above!
+                            </div>
+                            '''}
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-slate-950 border-t border-slate-900 py-6 mt-12">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
+                <p>{config_obj.PODCAST_NAME} Podcast Studio. Autonomous Agent Running on Vercel Serverless.</p>
+                <p class="mt-1">"I'll see you in the future."</p>
+            </div>
+        </footer>
+
+        <!-- Javascript Operations -->
+        <script>
+            function toggleScript() {{
+                const content = document.getElementById("scriptContent");
+                const arrow = document.getElementById("scriptArrow");
+                if (content.classList.contains("hidden")) {{
+                    content.classList.remove("hidden");
+                    arrow.innerText = "▲";
+                }} else {{
+                    content.classList.add("hidden");
+                    arrow.innerText = "▼";
+                }}
+            }}
+
+            async function triggerEpisode() {{
+                showNotification("🤖 Instructing agent to draft new episode...", "bg-purple-600/20 text-purple-300 border border-purple-500/30");
+                try {{
+                    const res = await fetch("/episode", {{
+                        method: "POST",
+                        headers: {{ "Content-Type": "application/json" }},
+                        body: JSON.stringify({{ topic: null }})
+                    }});
+                    const data = await res.json();
+                    showNotification("✅ Generation pipeline started successfully! It will save to Notion & your local database shortly. Refresh in a moment.", "bg-green-500/10 text-green-400 border border-green-500/20");
+                }} catch (e) {{
+                    showNotification("❌ Error triggering agent: " + e, "bg-red-500/10 text-red-400 border border-red-500/20");
+                }}
+            }}
+
+            async function triggerWeekly() {{
+                showNotification("📅 Starting weekly planning and newsletter workflow...", "bg-slate-800/30 text-slate-300 border border-slate-700/30");
+                try {{
+                    const res = await fetch("/weekly-workflow", {{ method: "POST" }});
+                    const data = await res.json();
+                    showNotification("✅ Weekly workflow completed & saved to Notion/Local cache!", "bg-green-500/10 text-green-400 border border-green-500/20");
+                }} catch (e) {{
+                    showNotification("❌ Error: " + e, "bg-red-500/10 text-red-400 border border-red-500/20");
+                }}
+            }}
+
+            function showNotification(msg, styleClass) {{
+                const alert = document.getElementById("statusAlert");
+                alert.className = "mt-4 p-3 rounded-lg text-xs font-semibold " + styleClass;
+                alert.innerText = msg;
+                alert.classList.remove("hidden");
+            }}
+        </script>
+
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content, status_code=200)
 
 @app.get("/episodes")
 def get_episodes(limit: int = 10):
