@@ -96,6 +96,34 @@ class FirasAiAgent:
             show_notes=script["show_notes"]
         )
 
+        # Generate Audio Voiceover & Background Music Mix (New Enhancement!)
+        if self.config.ELEVENLABS_API_KEY and self.config.ELEVENLABS_API_KEY != "your_elevenlabs_api_key":
+            try:
+                print("🎙️ Generating audio voiceover via ElevenLabs...")
+                # Generate audio for the first 2000 characters (Cold Open + Intro) to keep it lightweight & stay within API limits
+                preview_text = script["content"][:2000]
+                
+                os.makedirs("data", exist_ok=True)
+                voice_file = f"data/voice_{episode_id}.mp3"
+                
+                generated_voice = self.audio.generate_intro(preview_text, voice_file)
+                if generated_voice:
+                    print("🎵 Mixing background music onto voiceover track...")
+                    music_file = "data/calm_music.mp3"
+                    mixed_file = f"data/master_{episode_id}.mp3"
+                    
+                    final_master = self.audio.mix_voice_and_music(
+                        voice_path=generated_voice,
+                        music_path=music_file,
+                        output_path=mixed_file
+                    )
+                    if final_master:
+                        print(f"✅ Mixed audio master created successfully: {final_master}")
+                        self.db.log_event("audio_generation_success", f"Audio master mixed: {final_master}")
+            except Exception as e:
+                print(f"⚠️ Audio generation or mixing failed: {e}")
+                self.db.log_event("audio_generation_error", str(e))
+
         return episode_id
 
     # ── Scheduled workflows ────────────────────────────────────────────────────
