@@ -37,9 +37,9 @@ class Config:
     NOTION_CLIPS_DB = os.getenv("NOTION_CLIPS_DB")
 
     # ── Models ────────────────────────────────────────────────────────────────
-    PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", "gpt-4")
-    FAST_MODEL = os.getenv("FAST_MODEL", "gpt-3.5-turbo")
-    CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-opus-20240229")
+    PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", "gpt-4o")
+    FAST_MODEL = os.getenv("FAST_MODEL", "gpt-4o-mini")
+    CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-latest")
 
     def get_openai_client(self):
         from openai import OpenAI
