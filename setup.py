@@ -14,5 +14,6 @@ setup(
         "uvicorn>=0.28.0",
         "pydantic>=2.0.0",
         "pydub>=0.25.1",
+        "audioop-lts>=0.2.0; python_version >= '3.13'",
     ],
 )
