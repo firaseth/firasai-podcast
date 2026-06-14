@@ -14,9 +14,24 @@ class ResearcherAgent:
         return self._structure_research(topic, raw)
 
     def _perplexity_research(self, topic: str) -> dict:
-        """Pull real-time data, stats, and quotes via Perplexity."""
+        """Pull real-time data, stats, and quotes via Perplexity, with a robust OpenAI fallback."""
+        api_key = self.config.PERPLEXITY_API_KEY
+        
+        # Check if the key is missing or set to the placeholder
+        is_missing_key = (
+            not api_key or 
+            api_key == "database_id_here" or 
+            api_key == "pplx-..." or 
+            "perplexity" in api_key.lower() or 
+            api_key.startswith("your_")
+        )
+
+        if is_missing_key:
+            print("[ResearcherAgent] Perplexity API key not configured. Using OpenAI fallback for trend research.")
+            return self._openai_research_fallback(topic)
+
         headers = {
-            "Authorization": f"Bearer {self.config.PERPLEXITY_API_KEY}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         data = {
@@ -37,18 +52,52 @@ Provide:
                 }
             ],
         }
-        response = requests.post(
-            "https://api.perplexity.ai/chat/completions", headers=headers, json=data
+        try:
+            response = requests.post(
+                "https://api.perplexity.ai/chat/completions", headers=headers, json=data, timeout=15
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"[ResearcherAgent] Perplexity query failed ({e}). Falling back to OpenAI for research...")
+            return self._openai_research_fallback(topic)
+
+    def _openai_research_fallback(self, topic: str) -> dict:
+        """Fallback to OpenAI to generate high-quality research if Perplexity is unavailable."""
+        prompt = f"""
+        Conduct deep-dive research on the topic: {topic}
+        Provide highly realistic, up-to-date facts, estimates, statistics, and timelines.
+        
+        Include:
+        - 10 surprising statistics with credible sources
+        - 5 expert quotes
+        - 3 real-world examples
+        - 2 counter-arguments
+        - Timeline of how this topic has evolved
+        - Recent news
+        - Common misconceptions
+        """
+        response = self.client.chat.completions.create(
+            model=self.config.PRIMARY_MODEL,
+            messages=[{"role": "user", "content": prompt}]
         )
-        response.raise_for_status()
-        return response.json()
+        content = response.choices[0].message.content
+        # Return structured in choices structure resembling Perplexity completions API
+        return {"choices": [{"message": {"content": content}}]}
 
     def _structure_research(self, topic: str, raw_data: dict) -> StructuredResearch:
         """Transform raw Perplexity output into a clean, script-ready format."""
+        # Extract text content from the API choices response
+        raw_text = ""
+        try:
+            raw_text = raw_data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError):
+            raw_text = str(raw_data)
+
         prompt = f"""
         Structure this research into a clean format for a {self.config.PODCAST_NAME} podcast script.
         Topic: {topic}
-        Raw Research: {json.dumps(raw_data)}
+        Raw Research: {raw_text}
         
         You must return a JSON object with:
         - stats (list of str): surprising statistics with sources

@@ -71,9 +71,29 @@ class PlannerAgent:
         return parsed
 
     def find_trending_topics(self) -> dict:
-        """Use Perplexity to pull current trends across the niche."""
+        """Use Perplexity to pull current trends across the niche, with robust OpenAI fallback."""
+        api_key = self.config.PERPLEXITY_API_KEY
+        
+        is_missing_key = (
+            not api_key or 
+            api_key == "database_id_here" or 
+            api_key == "pplx-..." or 
+            "perplexity" in api_key.lower() or 
+            api_key.startswith("your_")
+        )
+
+        if is_missing_key:
+            print("[PlannerAgent] Perplexity API key not configured. Using OpenAI to simulate trending topics.")
+            prompt = f"What are the top 10 trending topics in {self.config.NICHE} right now? Include specific stories, viral moments, and emerging trends. Return as a clean JSON structure."
+            response = self.client.chat.completions.create(
+                model=self.config.PRIMARY_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"}
+            )
+            return json.loads(response.choices[0].message.content)
+
         headers = {
-            "Authorization": f"Bearer {self.config.PERPLEXITY_API_KEY}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         data = {
@@ -88,11 +108,20 @@ class PlannerAgent:
                 }
             ],
         }
-        response = requests.post(
-            "https://api.perplexity.ai/chat/completions", headers=headers, json=data
-        )
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = requests.post(
+                "https://api.perplexity.ai/chat/completions", headers=headers, json=data, timeout=15
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"[PlannerAgent] Perplexity query failed ({e}). Falling back to OpenAI...")
+            prompt = f"What are the top 10 trending topics in {self.config.NICHE} right now? Include specific stories, viral moments, and emerging trends."
+            response = self.client.chat.completions.create(
+                model=self.config.PRIMARY_MODEL,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return {"choices": [{"message": {"content": response.choices[0].message.content}}]}
 
     def create_content_calendar(self, weeks: int = 4) -> dict:
         """Create a multi-week content calendar."""
