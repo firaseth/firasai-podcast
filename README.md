@@ -1,4 +1,4 @@
-![FirasAi Podcast](./banner.svg)
+![FirasAi Podcast](./firasai_agent_3d.png)
 # 🎙️ FirasAi Podcast — AI-Powered Media Business Blueprint
 
 > *Where AI Meets Money, Markets, and the Future*
