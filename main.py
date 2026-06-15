@@ -18,7 +18,7 @@ from tools.db_tool import DbTool
 
 # Web app imports
 from fastapi import FastAPI, BackgroundTasks, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 from typing import Optional
 from contextlib import asynccontextmanager
@@ -357,19 +357,25 @@ I'll see you in the future.""",
         <!-- Main Workspace -->
         <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
             
-            <!-- Hero / Title -->
+            <!-- Hero / Title with 3D Agent Render (PRO UPDATE!) -->
             <div class="relative bg-gradient-to-b from-purple-900/20 to-slate-950 border border-slate-800 rounded-3xl p-8 mb-10 overflow-hidden">
                 <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(147,51,234,0.15),transparent)]"></div>
-                <div class="relative max-w-3xl">
-                    <span class="text-xs font-semibold tracking-wider text-purple-400 uppercase bg-purple-950/50 border border-purple-800/40 px-3 py-1 rounded-full">
-                        Autonomous AI Media Studio
-                    </span>
-                    <h1 class="text-4xl sm:text-5xl font-extrabold text-white mt-4 tracking-tight leading-none">
-                        Where AI Meets Money, Markets, <br class="hidden sm:inline">and the Future.
-                    </h1>
-                    <p class="mt-4 text-lg text-slate-400 font-light leading-relaxed">
-                        I am your autonomous podcast host, <strong class="text-white">{config_obj.HOST_NAME}</strong>. I actively scan trends in <strong class="text-purple-300">{config_obj.NICHE}</strong>, draft structured research with Perplexity, write bold, rebellious scripts with GPT-4o, and update Notion—all on autopilot.
-                    </p>
+                <div class="relative grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                    <div class="md:col-span-2">
+                        <span class="text-xs font-semibold tracking-wider text-purple-400 uppercase bg-purple-950/50 border border-purple-800/40 px-3 py-1 rounded-full">
+                            Autonomous AI Media Studio
+                        </span>
+                        <h1 class="text-4xl sm:text-5xl font-extrabold text-white mt-4 tracking-tight leading-none">
+                            Where AI Meets Money, Markets, <br class="hidden sm:inline">and the Future.
+                        </h1>
+                        <p class="mt-4 text-lg text-slate-400 font-light leading-relaxed">
+                            I am your autonomous podcast host, <strong class="text-white">{config_obj.HOST_NAME}</strong>. I actively scan trends in <strong class="text-purple-300">{config_obj.NICHE}</strong>, draft structured research with Perplexity, write bold, rebellious scripts with GPT-4o, and update Notion—all on autopilot.
+                        </p>
+                    </div>
+                    <div class="relative flex justify-center">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-purple-500/25 to-pink-500/25 blur-3xl rounded-full"></div>
+                        <img src="/firasai_agent_3d.png" alt="FirasAI 3D Agent" class="relative max-h-60 rounded-2xl border border-slate-800 shadow-2xl object-cover hover:scale-105 transition duration-300">
+                    </div>
                 </div>
             </div>
 
@@ -434,7 +440,7 @@ I'll see you in the future.""",
                                     <span>📄 Expand Full Episode Script ({len(display_episodes[0]['script'].split())} words)</span>
                                     <span id="scriptArrow">▼</span>
                                 </button>
-                                <div id="scriptContent" class="hidden mt-4 bg-slate-950 rounded-lg p-5 border border-slate-850 max-h-96 overflow-y-auto text-xs leading-relaxed text-slate-300 whitespace-pre-wrap font-mono">
+                                <div id="scriptContent" class="hidden mt-4 bg-slate-950 rounded-lg p-5 border border-slate-855 max-h-96 overflow-y-auto text-xs leading-relaxed text-slate-300 whitespace-pre-wrap font-mono">
                                     {display_episodes[0]['script']}
                                 </div>
                             </div>
@@ -563,6 +569,11 @@ I'll see you in the future.""",
     """
     return HTMLResponse(content=html_content, status_code=200)
 
+@app.get("/firasai_agent_3d.png")
+def get_agent_image():
+    """Endpoint to serve the generated 3D AI Agent artwork dynamically on your webpage."""
+    return FileResponse("firasai_agent_3d.png")
+
 @app.get("/episodes")
 def get_episodes(limit: int = 10):
     """Retrieve locally cached generated episodes."""
@@ -595,6 +606,18 @@ def trigger_check_responses(background_tasks: BackgroundTasks):
     """Trigger Notion guest response updates in the background."""
     background_tasks.add_task(agent.check_responses)
     return {"message": "Guest response pipeline started in background"}
+
+
+# Startup background scheduler thread when running as API server
+@app.on_event("startup")
+def start_scheduler_on_startup():
+    # Only start background thread if NOT on Vercel serverless environment
+    if not os.environ.get("VERCEL") and not os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        print("⏰ Starting background scheduler thread...")
+        daemon_thread = threading.Thread(target=agent.start_scheduler_loop, daemon=True)
+        daemon_thread.start()
+    else:
+        print("☁️ Vercel Serverless environment detected. Disabling persistent background scheduler thread (use Vercel Cron/Webhooks instead).")
 
 
 if __name__ == "__main__":
